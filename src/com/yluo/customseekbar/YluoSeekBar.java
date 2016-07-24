@@ -2,18 +2,24 @@ package com.yluo.customseekbar;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.Paint.Style;
 import android.util.AttributeSet;
-import android.util.Log;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-
+/**
+ * 
+ * @author 樱天寻
+ *
+ */
 public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
-
 	private static final String TAG = "YluoSeekBar";
 
-	private float mThumbMinRadius = 5;
+	private float mThumbMinRadius = 4;
 
 	private float mThumbMaxRadius = 7;
 
@@ -30,8 +36,15 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 	private float mDrawProgressMaxSpan = 0;
 
 	private float mDrawThumbMaxSpan = 0;
+	private int mIsdrawBiger = 0;
 
-	private Paint paint;
+	private Paint mPaint;
+	
+	private boolean isFirstMove = true;
+	
+	private int lastProces = 0;
+	
+	private OnSeekBarChangeListener mOnSeekBarChangeListener;
 
 	public YluoSeekBar(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
@@ -50,15 +63,22 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 
 	private void init() {
 
-		mThumbMinRadius = DpTranToPx.dp2px(getContext(), mThumbMinRadius);
+		mThumbMinRadius = dp2px(mThumbMinRadius);
 
-		mThumbMaxRadius = DpTranToPx.dp2px(getContext(), mThumbMaxRadius);
+		mThumbMaxRadius = dp2px( mThumbMaxRadius);
 
 		mThumbRadius = mThumbMinRadius;
 
-		setOnSeekBarChangeListener(this);
+		super.setOnSeekBarChangeListener(this);
 
-		paint = PaintUtil.createPaint();
+		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		
+		mPaint.setColor(Color.RED);
+		
+		mPaint.setStrokeWidth(1);
+		
+		mPaint.setStyle(Style.FILL);
+		
 
 	}
 
@@ -97,27 +117,17 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 	}
 
 	private boolean isTouchDownOnThumb(MotionEvent event) {
-		
-		float curMaxTouchProgress = PositionToProgress(event.getX()+ mThumbRadius);
-		
-		float curMinTouchProgress = PositionToProgress(event.getX()- mThumbRadius);
-		
-		Log.d(TAG, "curMaxTouchProgress:" + curMaxTouchProgress 
-				+ ",curMinTouchProgress:" + curMinTouchProgress);
-		
-		if(curMaxTouchProgress <= getProgress() && curMinTouchProgress>= getProgress()) {
+
+		float curMaxTouchProgress = PositionToProgress(event.getX() + 2
+				* mThumbRadius);
+
+		float curMinTouchProgress = PositionToProgress(event.getX() - 2
+				* mThumbRadius);
+
+		if (getProgress() >= curMinTouchProgress
+				&& getProgress() <= curMaxTouchProgress) {
 			return true;
 		}
-		
-//		if (curTouchProgress <= (getProgress() + mThumbRadius)
-//				&& curTouchProgress >= (getProgress() - mThumbRadius)) {
-//			return true;
-//		}
-		
-//		if (curTouchProgress <= (getProgress() + 1)
-//				&& curTouchProgress >= (getProgress() - 1)) {
-//			return true;
-//		}
 
 		return false;
 	}
@@ -125,45 +135,61 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 	@Override
 	protected synchronized void onDraw(Canvas canvas) {
 		drawProgress(canvas);
+		if(mIsdrawBiger == -1) {
+			drawSmallThumb(canvas);
+			drawHalfBigThumb(canvas);
+		} else {
+			drawThumb(canvas);
+		}		
+	}
 
-		drawThumb(canvas);
+	private void drawHalfBigThumb(Canvas canvas) {
+		mPaint.setColor(mThumbColor);
+
+		float left = getThumDrawPosition() - mThumbMaxRadius;
+		float top = getMeasuredHeight() / 2 - mThumbMaxRadius;
+		
+		RectF rect = new RectF(left, top, left + mThumbMaxRadius * 2, top+ mThumbMaxRadius * 2);
+		
+		canvas.drawArc(rect, -90, 180, true, mPaint);
+	}
+
+	private void drawSmallThumb(Canvas canvas) {
+		mPaint.setColor(mThumbColor);
+
+		canvas.drawCircle(getThumDrawPosition(), getMeasuredHeight() / 2,
+				mThumbMinRadius, mPaint);
 	}
 
 	private void drawThumb(Canvas canvas) {
 
-		paint.setColor(mThumbColor);
+		mPaint.setColor(mThumbColor);
 
 		canvas.drawCircle(getThumDrawPosition(), getMeasuredHeight() / 2,
-				mThumbRadius, paint);
+				mThumbRadius, mPaint);
 	}
-
-	// 获取Thumb的绘制位置
 	private float getThumDrawPosition() {
 		return getPaddingLeft() + (getProgress() * 1.0f / getMax())
 				* mDrawThumbMaxSpan;
 	}
-
 	private void drawProgress(Canvas canvas) {
 		drawDeterminProgress(canvas);
 		drawIndeterminProgress(canvas);
 	}
-
 	private void drawDeterminProgress(Canvas canvas) {
 
-		paint.setColor(mDeterminProgressColor);
+		mPaint.setColor(mDeterminProgressColor);
 
 		canvas.drawRect(getDeterStartDrawPosition(), getDrawPregrossStartY(),
 				getThumDrawPosition(), getDrawPregrossStartY()
-						+ mProgressBarHeight, paint);
-
+						+ mProgressBarHeight, mPaint);
 	}
-
 	private void drawIndeterminProgress(Canvas canvas) {
-		paint.setColor(mIndeterminProgressBKColor);
+		mPaint.setColor(mIndeterminProgressBKColor);
 
 		canvas.drawRect(getThumDrawPosition(), getDrawPregrossStartY(),
 				getIndeterEndDrawPosition(), getDrawPregrossStartY()
-						+ mProgressBarHeight, paint);
+						+ mProgressBarHeight, mPaint);
 	}
 
 	private float getDrawPregrossStartY() {
@@ -179,14 +205,11 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 
 		return getPaddingLeft() + mThumbRadius * 2 + mDrawProgressMaxSpan;
 	}
-
 	private float PositionToProgress(float touchDownX) {
 		final int width = getWidth();
 		final int available = width - getPaddingLeft() - getPaddingRight();
 		final int x = (int) touchDownX;
 		float scale;
-		float progress = 0;
-
 		if (x < getPaddingLeft()) {
 			scale = 0.0f;
 		} else if (x > width - getPaddingRight()) {
@@ -195,28 +218,41 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 			scale = (float) (x - getPaddingLeft()) / (float) available;
 		}
 		final int max = getMax();
-		progress += scale * max;
-
-		return progress;
+		return scale * max;
 	}
 
+	@Override
+	public void setOnSeekBarChangeListener(OnSeekBarChangeListener l) {
+		mOnSeekBarChangeListener = l;
+	}
 	@Override
 	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
-
+		if(Math.abs(lastProces - getProgress()) < (getMax() * 0.05f) && isFirstMove) {
+			mIsdrawBiger = -1;
+			isFirstMove = false;
+		} else {
+			mIsdrawBiger = 1;
+		}
 	}
-
 	@Override
 	public void onStartTrackingTouch(SeekBar seekBar) {
-		Log.d(TAG, "-----------------");
-
 		mThumbRadius = mThumbMaxRadius;
-
+		lastProces = getProgress();
+		isFirstMove = true;
 	}
 
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
 		mThumbRadius = mThumbMinRadius;
+		mIsdrawBiger = 0;
+		if (mOnSeekBarChangeListener != null) {
+			mOnSeekBarChangeListener.onProgressChanged(seekBar, getProgress(),
+					false);
+		}
 	}
-
+	public int dp2px(float dp) {
+		return (int) (TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
+				getContext().getResources().getDisplayMetrics()) + 0.5f);
+	}
 }
