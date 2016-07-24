@@ -31,7 +31,7 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 
 	private int mIndeterminProgressBKColor = 0xffD8D8D8;
 
-	private float mProgressBarHeight = 4;
+	private float mProgressBarHeight = 3;
 
 	private float mDrawProgressMaxSpan = 0;
 
@@ -237,6 +237,7 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 	public void onStartTrackingTouch(SeekBar seekBar) {
 		mThumbRadius = mThumbMaxRadius;
 		lastProces = getProgress();
+		mIsdrawBiger = -1;
 		isFirstMove = true;
 	}
 
