@@ -20,7 +20,7 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 	private static final String TAG = "YluoSeekBar";
 
 	private float mThumbMinRadius = 4;
-
+	
 	private float mThumbMaxRadius = 7;
 
 	private float mThumbRadius;
@@ -78,8 +78,6 @@ public class YluoSeekBar extends SeekBar implements OnSeekBarChangeListener {
 		mPaint.setStrokeWidth(1);
 		
 		mPaint.setStyle(Style.FILL);
-		
-
 	}
 
 	public void setmDeterminProgressColor(int mDeterminProgressColor) {
